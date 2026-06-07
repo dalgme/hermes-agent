@@ -1,3 +1,46 @@
+<!-- KO-FORK-NOTICE-START -->
+
+> ## 🇰🇷 Hermes Agent(헤르메스) v0.16.0 한국어 패치 버전
+>
+> 이 저장소는 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)의 **개인 fork**이며, **Hermes Agent v0.16.0에 한국어를 추가**한 버전입니다. 데스크톱 UI 한국어 표시·한국어 README·관련 인프라 개선 등 **4건의 Pull Request**를 NousResearch에 제출했고 현재 머지 대기 중입니다.
+>
+> ### NousResearch 공식 머지 진행 상태
+>
+> | PR | 내용 | 링크 |
+> |---|---|---|
+> | #40716 | 데스크톱 한국어 로케일 (전체 UI 한국어) | [보기](https://github.com/NousResearch/hermes-agent/pull/40716) |
+> | #40718 | 보조 모델 경고 박스 색상 가독성 fix | [보기](https://github.com/NousResearch/hermes-agent/pull/40718) |
+> | #40849 | onboarding·intro 영문 텍스트를 i18n으로 이전 | [보기](https://github.com/NousResearch/hermes-agent/pull/40849) |
+> | #40872 | 한국어 README + 언어 선택 배지 | [보기](https://github.com/NousResearch/hermes-agent/pull/40872) |
+>
+> NousResearch가 위 PR들을 머지하면 [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com)의 공식 install.sh로 받은 Hermes에 한국어 옵션이 **자동 포함**됩니다. 그 시점부터는 이 fork를 별도로 받지 않으셔도 됩니다.
+>
+> ### 공식 머지 전에 한국어 버전을 미리 쓰고 싶다면
+>
+> 다음 명령으로 이 fork에서 직접 설치할 수 있습니다:
+>
+> ```bash
+> git clone https://github.com/dalgme/hermes-agent.git ~/.hermes/hermes-agent
+> cd ~/.hermes/hermes-agent
+> bash scripts/install.sh
+> ```
+>
+> 설치 후 Hermes 데스크톱 앱의 **Settings → 언어**에서 **한국어**를 선택하시면 됩니다.
+>
+> 표준 공식 설치(`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`)는 NousResearch 본가에서 받기 때문에, 머지 전까지는 이 명령으로 받은 Hermes에는 한국어 옵션이 없습니다.
+>
+> ### 만약 NousResearch가 머지하지 않으면?
+>
+> 이 fork에 한국어 패치가 영구 보존되므로 한국 사용자는 위 명령으로 계속 받아 사용할 수 있습니다. NousResearch 측 검토 결과에 따라 이 안내를 갱신하겠습니다.
+>
+> ### 문의·제보
+>
+> 한국어 번역에서 어색하거나 잘못된 표현을 발견하시면 [이 fork의 Issues](https://github.com/dalgme/hermes-agent/issues)에 알려주세요. NousResearch 공식 PR에도 반영됩니다.
+
+<!-- KO-FORK-NOTICE-END -->
+
+---
+
 <p align="center">
   <img src="assets/banner.png" alt="Hermes Agent" width="100%">
 </p>
