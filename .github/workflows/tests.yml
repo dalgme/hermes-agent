@@ -11,10 +11,12 @@ on:
 permissions:
   contents: read
 
-# Cancel in-progress runs for the same ref
+# Cancel in-progress runs only for PRs. For pushes to main, keep the older
+# run alive so long test suites are not surfaced as false failures via runner
+# shutdown / concurrency cancellation.
 concurrency:
   group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   generate:

@@ -22,11 +22,17 @@ Design rationale lives in ``docs/design/multiplexing-gateway.md`` (Workstream A)
 """
 from __future__ import annotations
 
+import json
 import os
+import subprocess
+import sys
+import shutil
 from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import Dict, Mapping, Optional
 
+from dotenv import load_dotenv
+from utils import atomic_replace, fast_safe_load
 
 # ── multiplex-active flag ────────────────────────────────────────────────
 # Process-global: set once at gateway startup when gateway.multiplex_profiles
@@ -194,12 +200,72 @@ def load_env_file(env_path: Path) -> Dict[str, str]:
     return secrets
 
 
-def build_profile_secret_scope(hermes_home: Path) -> Dict[str, str]:
-    """Build a profile's secret mapping from its ``<home>/.env``.
+def _load_env_file_via_op(env_path: Path) -> Dict[str, str]:
+    """Resolve an env file through 1Password CLI and return the resulting vars.
 
-    Returns a fresh dict (safe to install via ``set_secret_scope``). Genuinely
-    global vars are intentionally NOT copied in — ``get_secret`` reads those
-    from ``os.environ`` directly, so the scope holds only profile secrets.
+    ``.env.1password`` stores ``op://`` references, not literal secrets. This
+    helper runs the file through ``op run --env-file=...`` so the actual values
+    become available to Hermes at runtime without copying them into the file or
+    the process environment permanently. Falls back to an empty mapping when
+    ``op`` is unavailable or resolution fails.
     """
-    return load_env_file(Path(hermes_home) / ".env")
+    op_bin = shutil.which("op")
+    if not op_bin or not env_path.exists():
+        # Without ``op`` we cannot resolve ``op://`` references safely.
+        # Return an empty overlay so callers keep any plain-text ``.env``
+        # secrets but do not accidentally ingest unresolved secret handles.
+        return {}
+
+    parsed = load_env_file(env_path)
+    keys = [k for k, v in parsed.items() if isinstance(v, str) and v.startswith("op://")]
+    if not keys:
+        return parsed
+
+    payload = json.dumps(keys)
+    py_code = (
+        "import json, os, sys; "
+        "keys=json.loads(sys.argv[1]); "
+        "print(json.dumps({k: os.environ.get(k, '') for k in keys}))"
+    )
+    try:
+        proc = subprocess.run(
+            [op_bin, "run", f"--env-file={str(env_path)}", "--", sys.executable, "-c", py_code, payload],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except Exception:
+        return parsed
+
+    if proc.returncode != 0:
+        return parsed
+
+    try:
+        resolved = json.loads(proc.stdout or "{}")
+    except Exception:
+        return parsed
+
+    for key in keys:
+        val = resolved.get(key)
+        if isinstance(val, str) and val:
+            parsed[key] = val
+    return parsed
+
+
+def build_profile_secret_scope(hermes_home: Path) -> Dict[str, str]:
+    """Build a profile's secret mapping from its local secret files.
+
+    ``.env.1password`` is the authoritative source for 1Password-backed
+    credentials when present; ``.env`` remains a fallback/overlay for any
+    plain-text profile secrets. Returns a fresh dict (safe to install via
+    ``set_secret_scope``). Genuinely global vars are intentionally NOT copied
+    in — ``get_secret`` reads those from ``os.environ`` directly, so the scope
+    holds only profile secrets.
+    """
+    home = Path(hermes_home)
+    secrets = load_env_file(home / ".env")
+    onepassword_env = home / ".env.1password"
+    if onepassword_env.exists():
+        secrets.update(_load_env_file_via_op(onepassword_env))
+    return secrets
 

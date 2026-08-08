@@ -124,7 +124,24 @@ class TestEnvFileParsing:
         assert ss.load_env_file(tmp_path / "nope.env") == {}
 
     def test_build_profile_secret_scope(self, tmp_path):
-        (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-profile\n")
+        (tmp_path / ".env").write_text(
+            "ANTHROPIC_API_KEY=sk-profile\nOPENAI_API_KEY=sk-old\n"
+        )
+        (tmp_path / ".env.1password").write_text(
+            "OPENAI_API_KEY=sk-1p\nTELEGRAM_BOT_TOKEN=bot-1p\n"
+        )
         assert ss.build_profile_secret_scope(tmp_path) == {
-            "ANTHROPIC_API_KEY": "sk-profile"
+            "ANTHROPIC_API_KEY": "sk-profile",
+            "OPENAI_API_KEY": "sk-1p",
+            "TELEGRAM_BOT_TOKEN": "bot-1p",
+        }
+
+    def test_build_profile_secret_scope_skips_1password_when_op_missing(self, tmp_path, monkeypatch):
+        (tmp_path / ".env").write_text("ANTHROPIC_API_KEY=sk-profile\n")
+        (tmp_path / ".env.1password").write_text(
+            "OPENAI_API_KEY=op://vault/item/field\nTELEGRAM_BOT_TOKEN=op://vault/item/field\n"
+        )
+        monkeypatch.setattr(ss.shutil, "which", lambda _: None)
+        assert ss.build_profile_secret_scope(tmp_path) == {
+            "ANTHROPIC_API_KEY": "sk-profile",
         }
